@@ -2,10 +2,10 @@
 
 namespace BluemapConcat
 {
-    public partial class FromPosDialogViewModel: ObservableObject
+    public partial class FromPosDialogViewModel(int start1, int start2) : ObservableObject
     {
-        [ObservableProperty] int x1, x2;
-        [ObservableProperty] int pos1, pos2;
+        [ObservableProperty] int x1 = start1, x2 = start2;
+        [ObservableProperty] int pos1 = start1 * 512, pos2 = start2 * 512;
         public int Convert(int pos)
         {
             double p = (double)pos;

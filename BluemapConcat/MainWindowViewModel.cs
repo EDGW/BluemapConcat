@@ -11,17 +11,18 @@ namespace BluemapConcat
 {
     public partial class MainWindowViewModel : ObservableObject
     {
-        [ObservableProperty] string mapAddress = "", tilePath = "maps/world/tiles/1/x{x}/z{z}.png";
-        [ObservableProperty] sbyte startX = -9, startZ = -5, endX = -2, endZ = -2;
+        [ObservableProperty] string mapAddress = "", tilePath = "maps/{world}/tiles/1/x{x}/z{z}.png", worldName = "overworld", errMsg = "";
+        [ObservableProperty] int startX = 0, startZ = 0, endX = 1, endZ = 1;
         [ObservableProperty] int current, total, interval = 16, radius = 1, fitL = 65, fitH = 90, opacity = 70;
         [ObservableProperty] bool running, contour = false, bestFit = true, lower = false, upper = false, fit = true;
         [ObservableProperty] Color lowerC = Color.FromArgb(0xff, 0x00, 0x5c, 0xff), upperC = Color.FromArgb(0xff, 0xff, 0x00, 0x00), fitC = Color.FromArgb(0xff, 0x0, 0xff, 0x38);
         [ObservableProperty] WriteableBitmap? composite;
+        IReadOnlyDictionary<(int, int), BitmapImage> _data = new Dictionary<(int, int), BitmapImage>();
 
         [RelayCommand]
-        async Task CreateMap()
+        async Task FetchData()
         {
-            Dictionary<(int, int), WriteableBitmap> maps = new Dictionary<(int, int), WriteableBitmap>();
+            Dictionary<(int, int), BitmapImage> maps = [];
             if (StartX > EndX || StartZ > EndZ)
             {
                 return;
@@ -33,10 +34,9 @@ namespace BluemapConcat
                 Running = true;
                 for (int x = StartX; x <= EndX; x++) for (int z = StartZ; z <= EndZ; z++)
                 {
-                    Current++;
                     try
                     {
-                        var uri = new Uri(new Uri(MapAddress), TilePath.Replace("{x}", x.ToString()).Replace("{z}", z.ToString()));
+                        var uri = new Uri(new Uri(MapAddress), TilePath.Replace("{x}", x.ToString()).Replace("{z}", z.ToString()).Replace("{world}", WorldName));
                         Console.WriteLine($"Fetching tile ({x},{z}) from {uri}...");
                         HttpClient client = new HttpClient();
                         var bytes = await client.GetByteArrayAsync(uri);
@@ -47,19 +47,45 @@ namespace BluemapConcat
                         image.CreateOptions = BitmapCreateOptions.PreservePixelFormat;
                         image.StreamSource = stream;
                         image.EndInit();
-                        await Application.Current.Dispatcher.InvokeAsync(() =>
-                        {
-                            WriteableBitmap wb = Draw(image, Interval, Radius);
-                            maps[(x, z)] = wb;
-                        });
+                        maps[(x, z)] = image;
                         Console.WriteLine($"Fetched tile ({x},{z}).");
                     }
                     catch (Exception ex)
                     {
                         Console.WriteLine($"Error fetching tile ({x},{z}): {ex.GetType()}");
                     }
+                    Current++;
                 }
+            }
+            catch (Exception ex)
+            {
+                ErrMsg = ex.Message;
+            }
+            finally
+            {
+                Running = false;
+            }
+            _data = maps;
+        }
 
+        [RelayCommand]
+        void CreateMap()
+        {
+            var maps = _data;
+            var processed = new Dictionary<(int, int), WriteableBitmap>();
+            if (StartX > EndX || StartZ > EndZ)
+            {
+                return;
+            }
+            try
+            {
+                for (int x = StartX; x <= EndX; x++) for (int z = StartZ; z <= EndZ; z++)
+                {
+                    if (maps.ContainsKey((x, z))){
+                        WriteableBitmap wb = Draw(maps[(x, z)], Interval, Radius);
+                        processed[(x, z)] = wb;
+                    }
+                }
                 var tileSize = 501;
                 var tilesWide = EndX - StartX + 1;
                 var tilesHigh = EndZ - StartZ + 1;
@@ -70,7 +96,7 @@ namespace BluemapConcat
                 var stride = tileSize * 4;
                 var buffer = new byte[tileSize * stride];
 
-                foreach (var entry in maps)
+                foreach (var entry in processed)
                 {
                     var tile = entry.Value;
                     var offsetX = (entry.Key.Item1 - StartX) * tileSize;
@@ -80,16 +106,12 @@ namespace BluemapConcat
                     composite.WritePixels(new Int32Rect(offsetX, offsetZ, tileSize, tileSize), buffer, stride, 0);
                 }
 
-                maps.Clear();
+                processed.Clear();
                 this.Composite = composite;
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Unexpected Exception: {ex}");
-            }
-            finally
-            {
-                Running = false;
+                ErrMsg = ex.Message;
             }
         }
 
@@ -238,7 +260,7 @@ namespace BluemapConcat
         [RelayCommand]
         void XFromPos()
         {
-            var vm = new FromPosDialogViewModel();
+            var vm = new FromPosDialogViewModel(StartX, EndX);
             if (new FromPosDialog() { DataContext = vm }.ShowDialog() ?? false)
             {
                 StartX = (sbyte)vm.X1;
@@ -248,7 +270,7 @@ namespace BluemapConcat
         [RelayCommand]
         void ZFromPos()
         {
-            var vm = new FromPosDialogViewModel();
+            var vm = new FromPosDialogViewModel(StartZ, EndZ);
             if (new FromPosDialog() { DataContext = vm }.ShowDialog() ?? false)
             {
                 StartZ = (sbyte)vm.X1;

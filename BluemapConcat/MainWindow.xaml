@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:BluemapConcat" xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         mc:Ignorable="d"
-        Title="Bluemap Concat" Height="587" Width="912" WindowState="Maximized">
+        Title="Bluemap Concat" Height="619" Width="986" WindowState="Maximized">
     <Window.Resources>
         <materialDesign:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
         <materialDesign:MathConverter x:Key="MathConverter"/>
@@ -45,7 +45,9 @@
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
                     <Label Grid.Row="0" Grid.Column="0" Margin="0,5,5,5" VerticalAlignment="Center">Bluemap URL</Label>
-                    <TextBox Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="3" VerticalAlignment="Center" Text="{Binding MapAddress, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Padding="5,4,5,4"/>
+                    <TextBox Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="1" VerticalAlignment="Center" Text="{Binding MapAddress, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Padding="5,4,5,4"/>
+                    <Label Grid.Row="0" Grid.Column="2" Margin="0,5,5,5" VerticalAlignment="Center">World Name</Label>
+                    <TextBox Grid.Row="0" Grid.Column="3" Grid.ColumnSpan="1" VerticalAlignment="Center" Text="{Binding WorldName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Padding="5,4,5,4"/>
                     <Label Grid.Row="1" Grid.Column="0" Margin="0,5,5,5" VerticalAlignment="Center">Tilefile Path Format</Label>
                     <TextBox Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="3" VerticalAlignment="Center" Text="{Binding TilePath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Padding="5,4,5,4"/>
                     <StackPanel Orientation="Horizontal" Grid.Row="2" Grid.Column="0" Margin="0,5,5,5" VerticalAlignment="Center">
@@ -66,7 +68,7 @@
                         <TextBlock VerticalAlignment="Center" Margin="5,0,5,0">to</TextBlock>
                         <materialDesign:NumericUpDown Minimum="-128" Maximum="127" Value="{Binding EndZ, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Padding="5,4,5,4"/>
                     </StackPanel>
-                    
+
                     <StackPanel Orientation="Horizontal" Margin="0,5,5,5" Grid.Row="3" Grid.Column="0" >
                         <Label Margin="0,0,5,0" VerticalAlignment="Center">Contour</Label>
                         <CheckBox Margin="3,0,3,0" Content="" IsChecked="{Binding Contour, Mode=TwoWay}"/>
@@ -143,15 +145,19 @@
                 </Grid>
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                     <Button
-Style="{StaticResource MaterialDesignRaisedButton}" 
+Style="{StaticResource MaterialDesignOutlinedButton}" 
 HorizontalAlignment="Right" Margin="5" Content="Save Map" Command="{Binding SaveMapCommand}"/>
                     <Button
 materialDesign:ButtonProgressAssist.IsIndicatorVisible="{Binding Running}"
 materialDesign:ButtonProgressAssist.Value="{Binding Current}" 
 materialDesign:ButtonProgressAssist.Maximum="{Binding Total}" 
 Style="{StaticResource MaterialDesignRaisedButton}" 
+HorizontalAlignment="Right" Margin="5" Content="Fetch Data" Command="{Binding FetchDataCommand}"/>
+                    <Button
+Style="{StaticResource MaterialDesignRaisedButton}" 
 HorizontalAlignment="Right" Margin="5" Content="Generate Map" Command="{Binding CreateMapCommand}"/>
                 </StackPanel>
+                <Label HorizontalAlignment="Right" Content="{Binding ErrMsg}" Foreground="#E5FF0000"/>
             </StackPanel>
         </materialDesign:Card>
     </Grid>
